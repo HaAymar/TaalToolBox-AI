@@ -43,7 +43,7 @@ p.terminate()
 
 # Save the recorded data as a WAV file
 wf = wave.open(user_sound, 'wb')
-wf.setnchannels(2)
+wf.setnchannels(1)
 wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
 wf.setframerate(freq)
 wf.writeframes(b''.join(frames))
