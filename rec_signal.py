@@ -51,6 +51,14 @@ wf.close()
 
 samplerate, data = wavfile.read(user_sound)
 
+
+try: 
+    with open('data.svf' ,  'w' , encoding='utf-8') as f:
+        f.write(data)
+except: 
+    print("An exception occur")
+    
+
 print( "sample rate" , samplerate , "longueur de data : "  , len(data), 'data' , data)
 # recording = sd.rec(int(duration * freq), samplerate=freq,channels=2)
 
