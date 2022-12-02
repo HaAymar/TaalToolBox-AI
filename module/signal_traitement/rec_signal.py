@@ -1,4 +1,3 @@
-
 # import sounddevice as sd
 import pyaudio
 from scipy.io.wavfile import write
@@ -12,7 +11,7 @@ import seaborn as sns
 
 
 class audio_traitement:
-    
+
     def __init__(self):
         #simply frequency
         self.__freq = 44100
@@ -24,11 +23,11 @@ class audio_traitement:
         self.record(self.audio, self.__freq , self.__duration, self.frames )
         self.save_record(self.audio, self.__freq, self.frames, self.__user_sound)
         self.generate_graph(self.__user_sound)
-    
-    
+
+
     def record(self,audio, freq, duration, frames):
-        
-        # Start recorder with the given values of 
+
+        # Start recorder with the given values of
         # duration and sample frequency
 
         print('Recording')
@@ -40,14 +39,14 @@ class audio_traitement:
             data = stream.read(1024)
             frames.append(data)
 
-        # Stop and close the stream 
+        # Stop and close the stream
         stream.stop_stream()
         stream.close()
         # Terminate the PortAudio interface
         audio.terminate()
 
     def save_record(self ,audio, freq, frames, user_sound):
-        
+
         # Save the recorded data as a WAV file
         wf = wave.open(self.__user_sound, 'wb')
         wf.setnchannels(2)
@@ -59,12 +58,12 @@ class audio_traitement:
         samplerate, data = wavfile.read(user_sound)
 
 
-        try: 
+        try:
             with open('data.txt' ,  'w' , encoding='utf-8') as f:
                 f.write(data)
-        except: 
+        except:
             print("An exception occur")
-            
+
         print( "sample rate" , samplerate , "longueur de data : "  , len(data), 'data' , data)
 
     # recording = sd.rec(int(duration * freq), samplerate=freq,channels=2)
@@ -75,7 +74,7 @@ class audio_traitement:
     # This will convert the NumPy array to an audio
     # file with the given sampling frequency
     # write("recording0.wav", freq, recording)
-    
+
     # Convert the NumPy array to audio file
     # wv.write("recording1.wav", recording, freq, sampwidth=2)
     def generate_graph(self , user_sound):
@@ -123,7 +122,7 @@ class audio_traitement:
 
         # for ind in range(len(snd_part) - window+1):
         #     snd_part_average.append(np.mean(snd_part[ind:ind+window]))
-            
+
         # print(snd_part_average)
 
         plt.figure()
@@ -132,5 +131,16 @@ class audio_traitement:
         plt.xlabel("time [s]")
         plt.ylabel("amplitude")
         plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
+
+    def moving_average_of_2d_array(self, array, window):
+        array_average = []
+        for ind in range(len(array) - window+1):
+            array_average.append(np.mean(array[ind:ind+window]))
+        return array_average
+
+
+    def fast_fourier_transform(self, array):
+        fft = np.fft.fft(array)
+        return fft
 
 
