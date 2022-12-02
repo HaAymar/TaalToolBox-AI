@@ -1,6 +1,6 @@
 [
 	{
-		"word": "test",
-		"recList": [{ "name": "testrec", "goodPrononciation": false }]
+		"word": "elektriciteit",
+		"recList": [{ "name": "rec1", "goodPrononciation": false }]
 	}
 ]
