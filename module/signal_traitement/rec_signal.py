@@ -8,6 +8,7 @@ import wave
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import math
 
 
 class audio_traitement:
@@ -16,15 +17,15 @@ class audio_traitement:
         #simply frequency
         self.__freq = 44100
         # time to store data
-        self.__duration = 5
+        self.__duration = 3
         self.__user_sound = 'user_sound.wav'
         self.audio = pyaudio.PyAudio()
         self.frames = [] # Array pour stocker les trames
         self.record(self.audio, self.__freq , self.__duration, self.frames )
         self.save_record(self.audio, self.__freq, self.frames, self.__user_sound)
-        self.generate_graph(self.__user_sound)
-
-
+        # self.generate_graph(self.__user_sound )
+    
+    
     def record(self,audio, freq, duration, frames):
 
         # Start recorder with the given values of
@@ -54,7 +55,9 @@ class audio_traitement:
         wf.setframerate(freq)
         wf.writeframes(b''.join(frames))
         wf.close()
-
+        # TODO Trouver un moyen de génerer le graphique a partir des data initiale du son 
+        # Faire la moyenne sur les données
+        # Refaire le graphique a partir des nouvelles données   
         samplerate, data = wavfile.read(user_sound)
 
 
@@ -65,6 +68,8 @@ class audio_traitement:
             print("An exception occur")
 
         print( "sample rate" , samplerate , "longueur de data : "  , len(data), 'data' , data)
+        moving_data = self.moving_average_of_2d_array(data)
+        self.generate_graph(user_sound , moving_data)
 
     # recording = sd.rec(int(duration * freq), samplerate=freq,channels=2)
 
@@ -88,7 +93,7 @@ class audio_traitement:
         # detect when the sound start and finish exactly (the time)
 
         # put all the value of the sound in an array
-        snd_part = snd.extract_part(from_time=1.2, preserve_times=True)
+        snd_part = snd.extract_part(from_time=0, preserve_times=True)
 
         window = 4
 
@@ -126,14 +131,18 @@ class audio_traitement:
         # print(snd_part_average)
 
         plt.figure()
+        plt.subplot(1, 2, 1)
         plt.plot(snd_part.xs(), snd_part.values.T)
         plt.xlim([snd_part.xmin, snd_part.xmax])
         plt.xlabel("time [s]")
         plt.ylabel("amplitude")
+        # plt.axis([1.7, 2.5, -0.15 , 0.15])
+        # plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
+        plt.subplot(1, 2, 2)
+        plt.plot(data)       
         plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
 
-    def moving_average_2d_array(self, array, window):
-        # moving average
+    def moving_average_of_2d_array(self, array, window=3):
         array_average = []
         for ind in range(len(array) - window+1):
             array_average.append(np.mean(array[ind:ind+window]))
