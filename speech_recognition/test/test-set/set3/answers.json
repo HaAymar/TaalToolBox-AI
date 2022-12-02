@@ -1,0 +1,23 @@
+[
+	{
+		"word": "de multimeter",
+		"recList": [
+			{
+				"name": "rec1",
+				"goodPrononciation": true
+			},
+			{
+				"name": "rec2",
+				"goodPrononciation": false
+			},
+			{
+				"name": "rec3",
+				"goodPrononciation": true
+			},
+			{
+				"name": "rec4",
+				"goodPrononciation": false
+			}
+		]
+	}
+]

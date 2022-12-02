@@ -1,0 +1,51 @@
+[
+	{
+		"word": "mijn naam",
+		"recList": [
+			{
+				"name": "rec1",
+				"goodPrononciation": true
+			},
+			{
+				"name": "rec2",
+				"goodPrononciation": true
+			},
+			{
+				"name": "rec3",
+				"goodPrononciation": true
+			},
+			{
+				"name": "rec4",
+				"goodPrononciation": false
+			},
+			{
+				"name": "rec5",
+				"goodPrononciation": false
+			},
+			{
+				"name": "rec6",
+				"goodPrononciation": false
+			},
+			{
+				"name": "rec7",
+				"goodPrononciation": false
+			},
+			{
+				"name": "rec8",
+				"goodPrononciation": false
+			},
+			{
+				"name": "rec9",
+				"goodPrononciation": false
+			},
+			{
+				"name": "rec10",
+				"goodPrononciation": true
+			},
+			{
+				"name": "rec11",
+				"goodPrononciation": true
+			}
+		]
+	}
+]

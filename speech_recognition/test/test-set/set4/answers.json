@@ -1,0 +1,15 @@
+[
+	{
+		"word": "openbaar vervoer",
+		"recList": [
+			{
+				"name": "rec1",
+				"goodPrononciation": true
+			},
+			{
+				"name": "rec2",
+				"goodPrononciation": false
+			}
+		]
+	}
+]
