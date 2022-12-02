@@ -2,7 +2,7 @@
 import pyaudio
 from scipy.io.wavfile import write
 from scipy.io import wavfile
-from scipy.fft import rfft , rfftfreq, fftfreq
+from scipy.fft import rfft , rfftfreq, fftfreq, fft
 import wavio as wv
 import parselmouth
 import wave
@@ -24,8 +24,10 @@ class audio_traitement:
         self.frames = [] # Array pour stocker les trames
         self.record(self.audio, self.freq , self.__duration, self.frames )
         data = self.save_record(self.audio, self.freq, self.frames, self.__user_sound)
+        # samplerate, data = wavfile.read(self.__user_sound)
         efficace_data = self.efficace_value(data)
         moving_data = self.moving_average_of_2d_array(efficace_data)
+        print(moving_data)
         fft_data = self.fast_fourier_transform(moving_data)
         rms = self.rms_of_signal(moving_data)
 
@@ -40,7 +42,7 @@ class audio_traitement:
 
         print('Recording')
 
-        stream = audio.open(format=pyaudio.paInt16, channels=2, rate=freq, frames_per_buffer=1024, input=True)
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=freq, frames_per_buffer=1024, input=True)
 
         # Store data in chunks for 3 seconds
         for i in range(0, int(freq / 1024 * duration)):
@@ -57,7 +59,7 @@ class audio_traitement:
 
         # Save the recorded data as a WAV file
         wf = wave.open(self.__user_sound, 'wb')
-        wf.setnchannels(2)
+        wf.setnchannels(1)
         wf.setsampwidth(audio.get_sample_size(pyaudio.paInt16))
         wf.setframerate(freq)
         wf.writeframes(b''.join(frames))
@@ -96,10 +98,12 @@ class audio_traitement:
 
     def moving_average_of_2d_array(self, array, window=1000):
         array_average = []
+        print(array)
         for ind in range(len(array) - window+1):
             array_average.append(np.mean(array[ind:ind+window]))
 
         print(f" leng == {len(array_average)}")
+        print(array_average)
         return array_average
     # recording = sd.rec(int(duration * freq), samplerate=freq,channels=2)
 
@@ -171,7 +175,8 @@ class audio_traitement:
         # plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
         plt.subplot(1, 2, 2)
         print("data" , len(data))
-        xf = fftfreq(len(data), 1 / self.freq)
+        xf = rfftfreq((len(data)*2)-1, 1 / self.freq)
+        # xf = fftfreq(len(data), 1 / self.freq)
         plt.plot(xf , np.abs(data))
 
         plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
