@@ -2,6 +2,7 @@
 import pyaudio
 from scipy.io.wavfile import write
 from scipy.io import wavfile
+from scipy.fft import rfft , rfftfreq
 import wavio as wv
 import parselmouth
 import wave
@@ -15,14 +16,19 @@ class audio_traitement:
 
     def __init__(self):
         #simply frequency
-        self.__freq = 44100
+        self.freq = 44100
         # time to store data
         self.__duration = 3
         self.__user_sound = 'user_sound.wav'
         self.audio = pyaudio.PyAudio()
         self.frames = [] # Array pour stocker les trames
-        self.record(self.audio, self.__freq , self.__duration, self.frames )
-        self.save_record(self.audio, self.__freq, self.frames, self.__user_sound)
+        self.record(self.audio, self.freq , self.__duration, self.frames )
+        data = self.save_record(self.audio, self.freq, self.frames, self.__user_sound)
+        efficace_data = self.efficace_value(data)
+        moving_data = self.moving_average_of_2d_array(efficace_data)
+        fft_data = self.fast_fourier_transform(array_average)
+
+        self.generate_graph(user_sound , fft_data)
         # self.generate_graph(self.__user_sound )
     
     
@@ -59,6 +65,7 @@ class audio_traitement:
         # Faire la moyenne sur les données
         # Refaire le graphique a partir des nouvelles données   
         samplerate, data = wavfile.read(user_sound)
+        return data
 
 
         try:
@@ -67,10 +74,32 @@ class audio_traitement:
         except:
             print("An exception occur")
 
-        print( "sample rate" , samplerate , "longueur de data : "  , len(data), 'data' , data)
-        moving_data = self.moving_average_of_2d_array(data)
-        self.generate_graph(user_sound , moving_data)
+        print( "sample rate" , samplerate , "longueur de data : "  , len(data) , 'data' , data)
+        # moving_data = self.moving_average_of_2d_array(efficace_data)
+        # fft_data = self.fast_fourier_transform(moving_data)
+        
 
+    def efficace_value(self , array):
+        efficace_array = []
+        # TODO Prendre chaque tableau dans la matrice et faire la valeur efficace
+        # Voir comment faire la valeur efficace du tableau
+        # for ind in range(len(array)):
+            # efficace_array.append(np.sqrt(np.mean(np.array(array)**2)))
+
+        efficace_array = abs(np.array(array))
+        
+        # print(efficace_array)
+        
+        return efficace_array
+    
+    
+    def moving_average_of_2d_array(self, array, window=1000):
+        array_average = []
+        for ind in range(len(array) - window+1):
+            array_average.append(np.mean(array[ind:ind+window]))
+        
+        print(f" leng == {len(array_average)}")
+        return array_average
     # recording = sd.rec(int(duration * freq), samplerate=freq,channels=2)
 
     # wf.wait()
@@ -82,7 +111,7 @@ class audio_traitement:
 
     # Convert the NumPy array to audio file
     # wv.write("recording1.wav", recording, freq, sampwidth=2)
-    def generate_graph(self , user_sound):
+    def generate_graph(self , user_sound , data):
         sns.set()
 
         plt.rcParams['figure.dpi'] = 100 # Show nicely large images in this notebook
@@ -139,7 +168,10 @@ class audio_traitement:
         # plt.axis([1.7, 2.5, -0.15 , 0.15])
         # plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
         plt.subplot(1, 2, 2)
-        plt.plot(data)       
+        print("data" , len(data))
+        xf = rfftfreq(len(data), 1 / self.freq)
+        plt.plot(xf , data)       
+        
         plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
 
     def moving_average_of_2d_array(self, array, window=3):
@@ -149,8 +181,10 @@ class audio_traitement:
         return array_average
 
     def fast_fourier_transform(self, array):
-        fft = np.fft.fft(array)
-        return fft
+        # fft = np.fft.fft(array)
+        print(f"len array in fft {len(array)}")
+        rfft_data = rfft(array)
+        return rfft_data
 
     def rms_of_signal(self, array):
         rms = np.sqrt(np.mean(array**2))
