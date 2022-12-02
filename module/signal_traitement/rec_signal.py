@@ -2,13 +2,13 @@
 import pyaudio
 from scipy.io.wavfile import write
 from scipy.io import wavfile
-from scipy.fft import rfft , rfftfreq
+from scipy.fft import rfft , rfftfreq, fftfreq
 import wavio as wv
 import parselmouth
 import wave
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+import seaborn as sns #bibliothèque Python de visualisation de données basée sur matplotlib
 import math
 
 
@@ -26,12 +26,13 @@ class audio_traitement:
         data = self.save_record(self.audio, self.freq, self.frames, self.__user_sound)
         efficace_data = self.efficace_value(data)
         moving_data = self.moving_average_of_2d_array(efficace_data)
-        fft_data = self.fast_fourier_transform(array_average)
+        fft_data = self.fast_fourier_transform(moving_data)
+        rms = self.rms_of_signal(moving_data)
 
-        self.generate_graph(user_sound , fft_data)
-        # self.generate_graph(self.__user_sound )
-    
-    
+
+        self.generate_graph(self.__user_sound , fft_data)
+
+
     def record(self,audio, freq, duration, frames):
 
         # Start recorder with the given values of
@@ -61,9 +62,9 @@ class audio_traitement:
         wf.setframerate(freq)
         wf.writeframes(b''.join(frames))
         wf.close()
-        # TODO Trouver un moyen de génerer le graphique a partir des data initiale du son 
+        # TODO Trouver un moyen de génerer le graphique a partir des data initiale du son
         # Faire la moyenne sur les données
-        # Refaire le graphique a partir des nouvelles données   
+        # Refaire le graphique a partir des nouvelles données
         samplerate, data = wavfile.read(user_sound)
         return data
 
@@ -77,7 +78,7 @@ class audio_traitement:
         print( "sample rate" , samplerate , "longueur de data : "  , len(data) , 'data' , data)
         # moving_data = self.moving_average_of_2d_array(efficace_data)
         # fft_data = self.fast_fourier_transform(moving_data)
-        
+
 
     def efficace_value(self , array):
         efficace_array = []
@@ -87,17 +88,17 @@ class audio_traitement:
             # efficace_array.append(np.sqrt(np.mean(np.array(array)**2)))
 
         efficace_array = abs(np.array(array))
-        
+
         # print(efficace_array)
-        
+
         return efficace_array
-    
-    
+
+
     def moving_average_of_2d_array(self, array, window=1000):
         array_average = []
         for ind in range(len(array) - window+1):
             array_average.append(np.mean(array[ind:ind+window]))
-        
+
         print(f" leng == {len(array_average)}")
         return array_average
     # recording = sd.rec(int(duration * freq), samplerate=freq,channels=2)
@@ -112,6 +113,7 @@ class audio_traitement:
     # Convert the NumPy array to audio file
     # wv.write("recording1.wav", recording, freq, sampwidth=2)
     def generate_graph(self , user_sound , data):
+        print("Bonjour", data)
         sns.set()
 
         plt.rcParams['figure.dpi'] = 100 # Show nicely large images in this notebook
@@ -169,9 +171,9 @@ class audio_traitement:
         # plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
         plt.subplot(1, 2, 2)
         print("data" , len(data))
-        xf = rfftfreq(len(data), 1 / self.freq)
-        plt.plot(xf , data)       
-        
+        xf = fftfreq(len(data), 1 / self.freq)
+        plt.plot(xf , np.abs(data))
+
         plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
 
     def moving_average_of_2d_array(self, array, window=3):
@@ -187,5 +189,5 @@ class audio_traitement:
         return rfft_data
 
     def rms_of_signal(self, array):
-        rms = np.sqrt(np.mean(array**2))
+        rms = np.sqrt(np.mean(np.array(array)**2))
         return rms
