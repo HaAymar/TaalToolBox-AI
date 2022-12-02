@@ -132,15 +132,17 @@ class audio_traitement:
         plt.ylabel("amplitude")
         plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
 
-    def moving_average_of_2d_array(self, array, window):
+    def moving_average_2d_array(self, array, window):
+        # moving average
         array_average = []
         for ind in range(len(array) - window+1):
             array_average.append(np.mean(array[ind:ind+window]))
         return array_average
 
-
     def fast_fourier_transform(self, array):
         fft = np.fft.fft(array)
         return fft
 
-
+    def rms_of_signal(self, array):
+        rms = np.sqrt(np.mean(array**2))
+        return rms
