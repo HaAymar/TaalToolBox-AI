@@ -63,7 +63,7 @@ def textRecogniser(file, word: str):
 
         try:
             text = r.recognize_google(audio, language="nl-NL")
-            print(text)
+            print('Identified text:'+text)
             # if text == "hello world":
             #     print("success !")
             # else:

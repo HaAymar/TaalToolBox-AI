@@ -8,8 +8,8 @@ if __name__ == '__main__':
     audio_traitement()
 
     # Speech Recognition
-    print(speech_recognition("./speech_recognition/test/test-set/set1/rec1.wav", "mijn naam").getPrononciation())
-    # speech_recognition()
+    #print(speech_recognition("./speech_recognition/test/test-set/set1/rec1.wav", "mijn naam").getPrononciation())
+    print(speech_recognition("./user_sound.wav", "kabel").getPrononciation())
 
     #Class servant de test pour le signal
 

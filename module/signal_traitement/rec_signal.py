@@ -5,12 +5,18 @@ from scipy.io import wavfile
 from scipy.fft import rfft , rfftfreq, fftfreq, fft
 import wavio as wv
 import parselmouth
+import sounddevice as sd
 import wave
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns #bibliothèque Python de visualisation de données basée sur matplotlib
 import math
-
+import soundfile as sf
+from PIL import Image, ImageChops
+from pydub.silence import split_on_silence
+from pydub import AudioSegment, effects 
+from scipy.io.wavfile import read, write
+import imagehash
 
 class audio_traitement:
 
@@ -20,6 +26,7 @@ class audio_traitement:
         # time to store data
         self.__duration = 3
         self.__user_sound = 'user_sound.wav'
+        self.ref_sound = 'user_sound_kabel.wav'
         self.audio = pyaudio.PyAudio()
         self.frames = [] # Array pour stocker les trames
         self.record(self.audio, self.freq , self.__duration, self.frames )
@@ -27,12 +34,14 @@ class audio_traitement:
         # samplerate, data = wavfile.read(self.__user_sound)
         efficace_data = self.efficace_value(data)
         moving_data = self.moving_average_of_2d_array(efficace_data)
-        print(moving_data)
+        #print(moving_data)
         fft_data = self.fast_fourier_transform(moving_data)
         rms = self.rms_of_signal(moving_data)
-
+        
 
         self.generate_graph(self.__user_sound , fft_data)
+        #self.remove_silent()
+        self.generate_Spectogram(self.__user_sound,self.ref_sound)
 
 
     def record(self,audio, freq, duration, frames):
@@ -105,6 +114,88 @@ class audio_traitement:
         print(f" leng == {len(array_average)}")
         print(array_average)
         return array_average
+
+    def remove_silent (self, path):
+        
+        # Pass audio path
+        rate, audio = read(path)
+        # make the audio in pydub audio segment format
+        aud = AudioSegment(audio.tobytes(),frame_rate = rate,
+                     sample_width = audio.dtype.itemsize,channels = 1)
+        # use split on sience method to split the audio based on the silence, 
+        # here we can pass the min_silence_len as silent length threshold in ms and intensity thershold
+        audio_chunks = split_on_silence(
+            aud,
+            min_silence_len = 100,
+            silence_thresh = -45,
+            keep_silence = 20,)
+        #audio chunks are combined here
+        audio_processed = sum(audio_chunks)
+        audio_processed = np.array(audio_processed.get_array_of_samples())
+        #Note the processed audio rate is not the same - it would be 1K
+        return audio_processed, rate
+    
+    
+    def generate_Spectogram(self , user_sound, ref_sound):
+        #data, fs=sf.read(user_sound)
+        #data_ref, fs_ref=sf.read(ref_sound)
+        #sd.play(data, fs)
+        #status = sd.wait()
+        data_ref, fs_ref = self.remove_silent(ref_sound)
+        data, fs = self.remove_silent(user_sound)
+        plt.figure()
+        #plt.subplot(1,2 , 1)
+        plt.xlabel("time [s]")
+        plt.ylabel("Frequency")
+        plt.grid(visible=False)
+        plt.title('Spectogram Recorded Audio')
+        #plt.specgram(self.moving_average_of_2d_array, NFFT=128, Fs=1/3, noverlap=120, cmap='jet_r')Greys_r
+        plt.specgram(data,Fs=fs, cmap='Greys_r')
+        plt.savefig("image.png")
+        plt.show()
+
+        #plt.subplot(1,2 , 2)
+        plt.xlabel("time [s]")
+        plt.ylabel("Frequency")
+        plt.grid(visible=False)
+        #plt.specgram(self.moving_average_of_2d_array, NFFT=128, Fs=1/3, noverlap=120, cmap='jet_r')Greys_r
+        plt.title('Spectogram Reference Audio')
+        plt.specgram(data_ref,Fs=fs_ref, cmap='Greys_r')
+        plt.savefig("image_ref.png")
+        plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
+        
+        i1 = Image.open("image.png").convert('RGB')
+        print(i1.mode)
+        i2 = Image.open("image_ref.png").convert('RGB')
+        print(i2.mode)
+        difference_0 = ImageChops.difference(i1,i2)
+        print(difference_0.getbbox())
+        difference_0.show()
+       
+
+        assert i1.mode == i2.mode, "Different kinds of images."
+        assert i1.size == i2.size, "Different sizes."
+
+        pairs = zip(i1.getdata(), i2.getdata())
+        if len(i1.getbands()) == 1:
+            #for gray-scale jpegs
+            dif = sum(abs(p1-p2) for p1,p2 in pairs)
+        else:
+            dif = sum(abs(c1-c2) for p1,p2 in pairs for c1,c2 in zip(p1,p2))
+
+        ncomponents = i1.size[0] * i1.size[1] * 3
+        diff = (dif / 255.0 * 100) / ncomponents
+        print ("Difference (percentage):", diff )
+
+        
+        cutoff = 3  # maximum bits that could be different between the hashes. 
+
+        if diff < cutoff:
+            print('images are similar')
+        else:
+            print('images are not similar')
+
+            
     # recording = sd.rec(int(duration * freq), samplerate=freq,channels=2)
 
     # wf.wait()
@@ -117,7 +208,7 @@ class audio_traitement:
     # Convert the NumPy array to audio file
     # wv.write("recording1.wav", recording, freq, sampwidth=2)
     def generate_graph(self , user_sound , data):
-        print("Bonjour", data)
+        #print("Bonjour", data)
         sns.set()
 
         plt.rcParams['figure.dpi'] = 100 # Show nicely large images in this notebook
@@ -164,9 +255,9 @@ class audio_traitement:
         #     snd_part_average.append(np.mean(snd_part[ind:ind+window]))
 
         # print(snd_part_average)
-
+        audio1='../../user_sound'
         plt.figure()
-        plt.subplot(1, 2, 1)
+        plt.subplot(1,2 , 1)
         plt.plot(snd_part.xs(), snd_part.values.T)
         plt.xlim([snd_part.xmin, snd_part.xmax])
         plt.xlabel("time [s]")
@@ -176,10 +267,10 @@ class audio_traitement:
         plt.subplot(1, 2, 2)
         print("data" , len(data))
         xf = rfftfreq((len(data)*2)-1, 1 / self.freq)
-        # xf = fftfreq(len(data), 1 / self.freq)
         plt.plot(xf , np.abs(data))
-
-        plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
+        
+        plt.show()
+        
 
     def moving_average_of_2d_array(self, array, window=3):
         array_average = []
