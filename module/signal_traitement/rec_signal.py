@@ -196,3 +196,8 @@ class audio_traitement:
     def rms_of_signal(self, array):
         rms = np.sqrt(np.mean(np.array(array)**2))
         return rms
+
+    def closest_value(average_list, average_value):
+        arr = np.asarray(average_list)
+        i = (np.abs(arr - average_value)).argmin()
+        return arr[i]
