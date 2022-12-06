@@ -47,62 +47,62 @@ def recorder():
     wf.writeframes(b''.join(frames))
     wf.close()
 
-    return(user_sound)
+    return user_sound
 
 def cutSignal():
-        # On indique le fichier à traiter 
-        TRESH = 200
+    # On indique le fichier à traiter 
+    TRESH = 200
 
-        file = "record.wav"
+    file = "record.wav"
 
-        # On ouvre le fichier 
-        SPF = wave.open(file, "r")
+    # On ouvre le fichier 
+    SPF = wave.open(file, "r")
 
-        # On vérifie que l'enregistrement est bien en mono
-        # Si pas on le passe du stéréo au mono  
-        if SPF.getnchannels() != 1:
+    # On vérifie que l'enregistrement est bien en mono
+    # Si pas on le passe du stéréo au mono  
+    if SPF.getnchannels() != 1:
 
-            from pydub import AudioSegment
-            sound = AudioSegment.from_wav(file)
-            # On passe en mono 
-            sound = sound.set_channels(1)
-            # On exporte le fichier mono 
-            sound.export("recodedaudio.wav", format="wav")
-            # On remplace la variable par le nouveau fichier mono
-            file = "nostereo.wav"
+        from pydub import AudioSegment
+        sound = AudioSegment.from_wav(file)
+        # On passe en mono 
+        sound = sound.set_channels(1)
+        # On exporte le fichier mono 
+        sound.export("recodedaudio.wav", format="wav")
+        # On remplace la variable par le nouveau fichier mono
+        file = "nostereo.wav"
 
-        samplerate, data = wavfile.read(file)
+    samplerate, data = wavfile.read(file)
 
-        print(type(data))
-        print(data[0])
+    print(type(data))
+    print(data[0])
 
-        in_index = 0
-        out_index = 0
+    in_index = 0
+    out_index = 0
 
-        for i in range(0, len(data)):
-            if (data[i] > TRESH):
-                in_index = i
+    for i in range(0, len(data)):
+        if (data[i] > TRESH):
+            in_index = i
+            break
+        for o in range(0, len(data)):
+            if (data[-o] > TRESH):
+                out_index = -o
                 break
-            for o in range(0, len(data)):
-                if (data[-o] > TRESH):
-                    out_index = -o
-                    break
-                print(in_index)
-                print(out_index)
-                print(f"longueur du signal: {len(data)}" )
-                print(len(data) + out_index)
+            print(in_index)
+            print(out_index)
+            print(f"longueur du signal: {len(data)}" )
+            print(len(data) + out_index)
 
-        print(f"Moyenne du signal: {sum(data)/len(data)}")
+    print(f"Moyenne du signal: {sum(data)/len(data)}")
 
-        data_processed = data[int(in_index): len(data) + int(out_index)]
-        plt.subplot(1 ,2, 1)
-        plt.plot(data)
-        plt.subplot(1 ,2, 2)
-        plt.plot(data_processed)
-        plt.show()
+    data_processed = data[int(in_index): len(data) + int(out_index)]
+    plt.subplot(1 ,2, 1)
+    plt.plot(data)
+    plt.subplot(1 ,2, 2)
+    plt.plot(data_processed)
+    plt.show()
 
-        scaled = np.int16(data_processed)
-        wavfile.write("test.wav", samplerate, scaled)
+    scaled = np.int16(data_processed)
+    wavfile.write("test.wav", samplerate, scaled)
 
 def textRecogniser(file, word: str):
 

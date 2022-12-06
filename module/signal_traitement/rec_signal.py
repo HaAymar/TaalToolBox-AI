@@ -10,36 +10,60 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns #bibliothèque Python de visualisation de données basée sur matplotlib
 import math
-
+import os
+from module.config import config
 
 class audio_traitement:
 
     def __init__(self):
+        print(config.GOOD_VOCAL_DIR)
+        self.__good_vocal_dir = config.GOOD_VOCAL_DIR
+        self.__good_vocal_cut_dir = config.GOOD_VOCAL_CUT_DIR
+        self.__user_vocal_dir = config.USER_VOCAL_DIR
+        
+        self.good_vocal = os.listdir(self.__good_vocal_dir)
+        
         #simply frequency
         self.freq = 44100
         # time to store data
         self.__duration = 3
-        self.__user_sound = 'user_sound.wav'
+        self.__user_vocal = f'{self.__user_vocal_dir}user_sound.wav'
+        
+        self.__TRESH = 200
         self.audio = pyaudio.PyAudio()
         self.frames = [] # Array pour stocker les trames
+        
+        # CAS OU LUTILISATEUR ENREGISTRE PAS BESOIN DE CONVERTIR EN MONO CAR SAVE RECOR LE FAIT DEJA
+        
         # self.record(self.audio, self.freq , self.__duration, self.frames )
-        # data = self.save_record(self.audio, self.freq, self.frames, self.__user_sound)
-        samplerate, data = wavfile.read(self.__user_sound)
-        efficace_data = self.efficace_value(data)
+        # self.save_record(self.audio, self.freq, self.frames, self.__user_vocal)
+        # samplerate, data = self.generate_data_record(file)
+        
+        
+        # GENERER LE SPECTRE DUN FICHIER PRECIS:
+        stereo_file = f"{self.__good_vocal_dir}5d379dba-c3c9-4b00-961b-03a700840a06.wav"
+        
+       
+        # POUR GENERER LES DONNEES DU SPECTRE 
+        #self.save_record(self.audio, self.freq , self.frames , file)
+        mono_file = self.convert_sterio_mono(stereo_file)
+        samplerate, data = self.generate_data_record(mono_file)
+        print('data' , samplerate , "data" , data , "longueur de données" , len(data)) 
+        
+        # TRAITEMENT DES DONNEES DU SIGNAL
+        data_cut = self.cutSignal(samplerate, data , self.__good_vocal_cut_dir , self.__TRESH)
+        efficace_data = self.efficace_value(data_cut)
         moving_data = self.moving_average_of_2d_array(efficace_data)
-        # print(moving_data)
+
+        # TRAITEMENT DU SIGNAL ET GENERATION DU SPECTRE
         fft_data = self.fast_fourier_transform(moving_data)
         rms = self.rms_of_signal(moving_data)
-
-
-        # self.generate_graph(self.__user_sound , fft_data)
-        self.generate_graph(self.__user_sound , moving_data, fft_data)
+        
+        # Pour génerer le spectre d'un fichier précis
+        self.generate_graph(mono_file , data_cut, moving_data, fft_data)
 
 
     def record(self,audio, freq, duration, frames):
-
-        # Start recorder with the given values of
-        # duration and sample frequency
 
         print('Recording')
 
@@ -55,34 +79,75 @@ class audio_traitement:
         stream.close()
         # Terminate the PortAudio interface
         audio.terminate()
-
+        
     def save_record(self ,audio, freq, frames, user_sound):
 
         # Save the recorded data as a WAV file
-        wf = wave.open(self.__user_sound, 'wb')
+        wf = wave.open(user_sound, 'wb')
         wf.setnchannels(1)
         wf.setsampwidth(audio.get_sample_size(pyaudio.paInt16))
         wf.setframerate(freq)
         wf.writeframes(b''.join(frames))
         wf.close()
-        # TODO Trouver un moyen de génerer le graphique a partir des data initiale du son
-        # Faire la moyenne sur les données
-        # Refaire le graphique a partir des nouvelles données
+
+        # samplerate, data = wavfile.read(user_sound)
+        # print( "sample rate" , samplerate , "longueur de data : "  , len(data) )
+        # return samplerate, data
+
+    def convert_sterio_mono(self , file):
+        SPF = wave.open(file, "r")
+
+        # On vérifie que l'enregistrement est bien en mono
+        # Si pas on le passe du stéréo au mono  
+        if SPF.getnchannels() != 1:
+            from pydub import AudioSegment
+            sound = AudioSegment.from_wav(file)
+            # On passe en mono 
+            sound = sound.set_channels(1)
+            # On exporte le fichier mono 
+            sound.export(file, format="wav")
+            # On remplace la variable par le nouveau fichier mono
+            # file = "nostereo.wav"
+        return file
+            
+            
+    def generate_data_record(self , user_sound):
         samplerate, data = wavfile.read(user_sound)
-        return data
+        return samplerate, data
+    
+    def cutSignal(self ,samplerate, data , data_cur_dir, tresh):
 
+        in_index = 0
+        out_index = 0
+        # Parcour le tableau de données (tresh  = 200)
+    
+        # si data[0]>200
+        # in_index = index actuelle
+        
+        # parcourir le second tableau : 
+        # si data
+        for i in range(0, len(data)):
+            if data[i] > tresh:
+                in_index = i
+                break
+        for o in range(0, len(data)):
+            if data[-o] > tresh:
+                out_index = -o
+                break
+            # print(in_index)
+            # print(out_index)
+            # print(f"longueur du signal: {len(data)}" )
+            # print(len(data) + out_index)
 
-        try:
-            with open('data.txt' ,  'w' , encoding='utf-8') as f:
-                f.write(data)
-        except:
-            print("An exception occur")
+        print(f"Moyenne du signal: {sum(data)/len(data)}")
 
-        print( "sample rate" , samplerate , "longueur de data : "  , len(data) , 'data' , data)
-        # moving_data = self.moving_average_of_2d_array(efficace_data)
-        # fft_data = self.fast_fourier_transform(moving_data)
-
-
+        data_processed = data[int(in_index): len(data) + int(out_index)]
+        
+        # Récréer le fichier sans le
+        scaled = np.int16(data_processed)
+        wavfile.write(f'{data_cur_dir}5d379dba-c3c9-4b00-961b-03a700840a06.wav', samplerate, scaled)
+        return data_processed
+    
     def efficace_value(self , array):
         efficace_array = []
         # TODO Prendre chaque tableau dans la matrice et faire la valeur efficace
@@ -95,27 +160,13 @@ class audio_traitement:
         # print(efficace_array)
 
         return efficace_array
-
-        # def moving_average_of_2d_array(self, array, window=3):
-    #     array_average = []
-    #     for ind in range(len(array) - window+1):
-    #         array_average.append(np.mean(array[ind:ind+window]))
-    #     return array_average
     
     
     def moving_average_of_2d_array(self, list_array, window=1001):
         array_average = []
         array = list(list_array)
-        # print(array)
         import functools
-        # for pos in range(0, len(array)):
-        #     temp_calc = 0
-        #     for i in range(pos-(window//2), pos+(window//2)+1):
-        #         if (i >= 0) & (i < (len(array))):
-        #             # print(i, len(list))
-        #             temp_calc = temp_calc + array[i]
-        #     array_average.append(temp_calc/window)
-                # actual_ind = np.mean(array[ind:])
+  
         for ind in range(len(array)):
             if ind < window//2 :
                 actual_ind = functools.reduce(lambda x, y : x+y , array[ind: ind + (window//2)+1])
@@ -135,24 +186,19 @@ class audio_traitement:
                 actual_ind = actual_ind + functools.reduce(lambda x, y : x+y ,  array[ind: ind+((window//2)+1)]) 
                 average_ind = actual_ind/window
                 array_average.append(average_ind)
-                
-                
-        # return array_average        
-            
-            # array_average.append(np.mean(array[ind:ind+window]))
 
-        # [[1,2] , [3,4], [5,6], [7,8] , [9,10], [10,11]]
-        
-        # [[4/3,4] , []]
         print(f" leng == {len(array_average)}")
-        # print(array_average)
         return array_average
     
-    
-    # recording = sd.rec(int(duration * freq), samplerate=freq,channels=2)
+    def fast_fourier_transform(self, array):
+        # fft = np.fft.fft(array)
+        print(f"len array in fft {len(array)}")
+        rfft_data = rfft(array)
+        return rfft_data
 
-    # wf.wait()
-    # sd.wait()
+    def rms_of_signal(self, array):
+        rms = np.sqrt(np.mean(np.array(array)**2))
+        return rms
 
     # This will convert the NumPy array to an audio
     # file with the given sampling frequency
@@ -160,8 +206,8 @@ class audio_traitement:
 
     # Convert the NumPy array to audio file
     # wv.write("recording1.wav", recording, freq, sampwidth=2)
-    def generate_graph(self , user_sound , moving_data, data):
-        print("Bonjour", data)
+    def generate_graph(self , user_sound , data_cut, moving_data, data):
+        # print("Bonjour", data)
         sns.set()
 
         plt.rcParams['figure.dpi'] = 100 # Show nicely large images in this notebook
@@ -174,70 +220,52 @@ class audio_traitement:
         # put all the value of the sound in an array
         snd_part = snd.extract_part(from_time=0, preserve_times=True)
 
-        window = 4
-
         snd_list = []
-        # snd_list.append(snd_part)
-
-        # print(snd_list)
-        # Object type: Sound
-        # Object name: <no name>
-        # Date: Wed Nov 30 11:00:42 2022
-
-        # Number of channels: 2 (stereo)
-        # Time domain:
-        #    Start time: 1.2 seconds
-        #    End time: 4.992290249433107 seconds
-        #    Total duration: 3.7922902494331066 seconds
-        # Time sampling:
-        #    Number of samples: 167240
-        #    Sampling period: 2.2675736961451248e-05 seconds
-        #    Sampling frequency: 44100 Hz
-        #    First sample centred at: 1.2000113378684807 seconds
-        # Amplitude:
-        #    Minimum: -0.079864502 Pascal
-        #    Maximum: 0.105438232 Pascal
-        #    Mean: 1.31748932e-06 Pascal
-        #    Root-mean-square: 0.021210851 Pascal
-        # Total energy: 0.00170615214 Pascal² sec (energy in air: 4.26538036e-06 Joule/m²)
-        # Mean power (intensity) in air: 1.1247505e-06 Watt/m² = 60.51 dB
-        # Standard deviation in channel 1: 0.0212109622 Pascal
-        # Standard deviation in channel 2: 0.0212108666 Pascal
-
-        # for ind in range(len(snd_part) - window+1):
-        #     snd_part_average.append(np.mean(snd_part[ind:ind+window]))
-
-        # print(snd_part_average)
-
-        plt.figure()
-        plt.subplot(3, 1, 1)
+  
+        fig = plt.figure(figsize=(10,6 ))
+        fig.suptitle('Traitement du signal', fontsize = 12)
+        fig.subplots_adjust(hspace=0.4, wspace=0.4)
+        
+        plt.subplot(2, 2, 1)
         plt.plot(snd_part.xs(), snd_part.values.T)
         plt.xlim([snd_part.xmin, snd_part.xmax])
+        plt.plot(user_sound)
         plt.xlabel("time [s]")
         plt.ylabel("amplitude")
+        plt.title("Signal d'origine", fontsize=10)
         # plt.axis([1.7, 2.5, -0.15 , 0.15])
         # plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
-        plt.subplot(3, 1, 2)
+        
+        
+        plt.subplot(2, 2, 2)
+        # plt.plot(snd_part.xs(), snd_part.values.T)
+        # plt.xlim([snd_part.xmin, snd_part.xmax])
+        plt.plot(data_cut)
+        plt.xlabel("time [s]")
+        plt.ylabel("amplitude")
+        plt.title("Signal après extraction des partie inutile")
+        
+        plt.subplot(2, 2, 3)
+        # plt.plot(snd_part.xs(), snd_part.values.T)
+        # plt.xlim([snd_part.xmin, snd_part.xmax])
         plt.plot(moving_data)
-        plt.subplot(3, 1, 3)
-        print("data" , len(data))
+        plt.xlabel("time [s]")
+        plt.ylabel("amplitude")
+        plt.title("Signal après avoir effectué une moyenne glissante", fontsize=10)
+        
+        plt.plot(moving_data)
+        
+        plt.subplot(2, 2, 4)
         xf = rfftfreq((len(data)*2)-1, 1 / self.freq)
         # xf = fftfreq(len(data), 1 / self.freq)
         plt.plot(xf , np.abs(data))
+        plt.title("Signal après traitement", fontsize=10)
 
         plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
 
 
 
-    def fast_fourier_transform(self, array):
-        # fft = np.fft.fft(array)
-        print(f"len array in fft {len(array)}")
-        rfft_data = rfft(array)
-        return rfft_data
 
-    def rms_of_signal(self, array):
-        rms = np.sqrt(np.mean(np.array(array)**2))
-        return rms
 
     def closest_value(average_list, average_value):
         arr = np.asarray(average_list)

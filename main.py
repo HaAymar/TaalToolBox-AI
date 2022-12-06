@@ -4,14 +4,12 @@ from module.test_signal.signal_test import signal_test
 
 # valeur (racine carre de la somme de carre / par la s)
 if __name__ == '__main__':
+    
     # Signal Traitement
-    # audio_traitement()
+    audio_traitement()
 
     # Speech Recognition
     # print(speech_recognition("./speech_recognition/test/test-set/set1/rec1.wav", "mijn naam").getPrononciation())
     # speech_recognition()
-
-    # Class servant de test pour le signal
-
-    signal_test()
-
+    
+    # signal_test()
